@@ -110,7 +110,7 @@ class TonApiGetter:
     def get_liquidity(self) -> float:
         """
         Возвращает ликвидность в $
-        :return dict:
+        :return float:
         """
         response = requests.get(f"{STONFI_API_URL}/pools")
         data = response.json()
