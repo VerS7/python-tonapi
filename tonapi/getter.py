@@ -31,6 +31,16 @@ class TonApiGetter:
         """
         return self.get_meta()["admin"]["address"]
 
+    def _get_contract_addr(self) -> str:
+        """
+        Возвращает адрес контракта
+        :return str:
+        """
+        url = f"{STONFI_API_URL}/assets/{self._get_burn_addr()}"
+        response = requests.get(url)
+        data = response.json()
+        return data["asset"]["contract_address"]
+
     def get_meta(self) -> dict:
         """
         Возвращает метаданные по жетону
@@ -87,29 +97,26 @@ class TonApiGetter:
         """
         return self.get_meta()["holders_count"]
 
-    def get_metrics(self) -> list[dict]:
+    def get_volume(self) -> dict:
         """
-        Возвращает метрики по пулам - объём продаж за 24ч и ликвидность в USD
-        :return:
+        Возвращает объём продаж за 24ч
+        :return dict:
         """
-        time_since = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%S')
-        time_until = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        #  time_since = (datetime.datetime.utcnow() - datetime.timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%S')
+        #  time_until = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
 
-        url = f"{STONFI_API_URL}/stats/pool?since={time_since}&until={time_until}"
-        response = requests.get(url)
+        raise NotImplementedError
 
+    def get_liquidity(self) -> float:
+        """
+        Возвращает ликвидность в $
+        :return dict:
+        """
+        response = requests.get(f"{STONFI_API_URL}/pools")
         data = response.json()
 
-        stats = [elem for elem in data["stats"] if elem["base_id"] == self.jetton and float(elem["quote_volume"]) > 0]
+        stats = [elem for elem in data["pool_list"]
+                 if elem["token0_address"] == self.jetton
+                 and elem["token1_address"] == self._get_contract_addr()][0]
 
-        return [
-            {
-                "pool_address": elem["pool_address"],
-                "volume": elem["quote_volume"],
-                "liquidity_usd": elem["lp_price_usd"],
-
-            }
-            for elem in stats
-        ]
-
-
+        return stats["lp_total_supply_usd"]
